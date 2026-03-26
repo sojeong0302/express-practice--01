@@ -14,7 +14,7 @@
  * 테스트: curl -X DELETE http://localhost:8080/api/subscriptions/1
  */
 
-import express from 'express';
+import express from "express";
 
 const app = express();
 const PORT = 8080;
@@ -23,15 +23,45 @@ app.use(express.json());
 
 // 임시 데이터
 let subscriptions = [
-  { id: 1, service: 'Netflix', price: 9900, cycle: 'monthly', startDate: '2024-01-01' },
-  { id: 2, service: 'YouTube Premium', price: 14900, cycle: 'monthly', startDate: '2024-01-15' },
-  { id: 3, service: 'Spotify', price: 10900, cycle: 'monthly', startDate: '2024-02-01' },
-  { id: 4, service: 'Disney+', price: 9900, cycle: 'monthly', startDate: '2024-03-01' },
-  { id: 5, service: 'ChatGPT Plus', price: 22000, cycle: 'monthly', startDate: '2024-04-01' },
+  {
+    id: 1,
+    service: "Netflix",
+    price: 9900,
+    cycle: "monthly",
+    startDate: "2024-01-01",
+  },
+  {
+    id: 2,
+    service: "YouTube Premium",
+    price: 14900,
+    cycle: "monthly",
+    startDate: "2024-01-15",
+  },
+  {
+    id: 3,
+    service: "Spotify",
+    price: 10900,
+    cycle: "monthly",
+    startDate: "2024-02-01",
+  },
+  {
+    id: 4,
+    service: "Disney+",
+    price: 9900,
+    cycle: "monthly",
+    startDate: "2024-03-01",
+  },
+  {
+    id: 5,
+    service: "ChatGPT Plus",
+    price: 22000,
+    cycle: "monthly",
+    startDate: "2024-04-01",
+  },
 ];
 
 // 목록 조회 (완성됨)
-app.get('/api/subscriptions', (req, res) => {
+app.get("/api/subscriptions", (req, res) => {
   res.json({
     success: true,
     count: subscriptions.length,
@@ -52,8 +82,31 @@ app.get('/api/subscriptions', (req, res) => {
 // 4) subscriptions.splice(index, 1)로 배열에서 제거
 // 5) 응답: { success: true, message: '구독이 삭제되었습니다', data: 삭제된데이터 }
 
+app.delete("/api/subscriptions/:id", (req, res) => {
+  const id = Number(req.params.id);
 
+  const index = subscriptions.findIndex((t) => {
+    return t.id === id;
+  });
 
+  if (index === -1) {
+    return res
+      .status(404)
+      .json({ success: false, message: "구독을 찾을 수 없습니다" });
+  }
+
+  const deleteItem = subscriptions.find((t) => {
+    return t.id === id;
+  });
+
+  subscriptions.splice(index, 1);
+
+  res.json({
+    success: true,
+    message: "구독이 삭제되었습니다",
+    data: deleteItem,
+  });
+});
 
 // ─────────────────────────────────────────────
 // TODO 2: 여러 항목 삭제
@@ -76,8 +129,36 @@ app.get('/api/subscriptions', (req, res) => {
 //     -H "Content-Type: application/json" \
 //     -d '{"ids": [1, 2, 999]}'
 
+app.delete("/api/subscriptions", (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "ID 배열을 제공해주세요" });
+  }
 
+  const deletedItems = [];
+  const notFoundIds = [];
 
+  for (let i = 0; i < ids.length; i++) {
+    const index = subscriptions.findIndex((t) => {
+      return t.id === ids[i];
+    });
+    if (index !== -1) {
+      const deleted = subscriptions.splice(index, 1);
+      deletedItems.push(deleted);
+    } else {
+      notFoundIds.push(ids[i]);
+    }
+  }
+  // console.log("deleteItems=>" + JSON.stringify(deletedItems));
+  res.json({
+    success: true,
+    message: `${deletedItems.length}개 항목이 삭제되었습니다`,
+    deleted: deletedItems,
+    notFound: notFoundIds,
+  });
+});
 
 // ─────────────────────────────────────────────
 // 서버 시작
